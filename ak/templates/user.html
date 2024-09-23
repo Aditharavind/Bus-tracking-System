@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Dashboard</title>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+
+    <!-- Bootstrap CSS for responsive design -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Leaflet.js CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 50px auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        #map {
+            height: 500px;
+            width: 100%;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        #current-location {
+            text-align: center;
+            font-size: 18px;
+            color: #555;
+            margin-top: 10px;
+        }
+
+        .btn-custom {
+            background-color: #007bff;
+            color: #fff;
+            border-radius: 8px;
+            padding: 10px;
+            font-weight: 500;
+            width: 100%;
+        }
+
+        .btn-custom:hover {
+            background-color: #0056b3;
+        }
+
+        .logout-btn {
+            width: 100%;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Bus Tracking System</h1>
+
+        <div id="map"></div>
+
+        <div id="current-location">
+            <strong>Current Location: </strong>
+            <span id="location-name">Loading...</span>
+        </div>
+
+        <a href="/logout" class="btn btn-danger logout-btn">Logout</a>
+    </div>
+
+    <!-- Leaflet.js JS -->
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+    <script>
+        var map = L.map('map').setView([9.3150, 76.6150], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        var busMarker = L.marker([9.3150, 76.6150]).addTo(map).bindPopup('Bus Location').openPopup();
+        var locationName = document.getElementById('location-name');
+
+        // Function to fetch live bus location
+        function fetchBusLocation() {
+            fetch('/get_bus_location')
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.error) {
+                        busMarker.setLatLng([data.latitude, data.longitude]);
+                        map.setView([data.latitude, data.longitude], 13);
+
+                        // Update the place name below the map
+                        locationName.textContent = data.place_name;
+                    } else {
+                        locationName.textContent = "Bus not started yet.";
+                    }
+                })
+                .catch(error => {
+                    locationName.textContent = "Error fetching location.";
+                    console.error('Error:', error);
+                });
+        }
+
+        // Poll for live bus location every 10 seconds
+        setInterval(fetchBusLocation, 10000);
+    </script>
+
+</body>
+</html>

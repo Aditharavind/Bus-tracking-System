@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bus Tracking System - Chengannur to Mavelikara</title>
+    <!-- Leaflet.js CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        #map {
+            height: 600px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Bus Tracking System - Chengannur to Mavelikara</h1>
+    <div id="map"></div>
+
+    <!-- Leaflet.js JS -->
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        // Initialize the map centered at Chengannur
+        var map = L.map('map').setView([9.3150, 76.6150], 13);
+
+        // Add OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // Initialize the bus marker at Chengannur
+        var busMarker = L.marker([9.3150, 76.6150]).addTo(map)
+            .bindPopup('Bus Location')
+            .openPopup();
+
+        // Function to update the bus position smoothly between route points
+        function moveBus(lat1, lng1, lat2, lng2, duration) {
+            let steps = 100;  // Number of animation steps
+            let stepDuration = duration / steps;
+            let latStep = (lat2 - lat1) / steps;
+            let lngStep = (lng2 - lng1) / steps;
+
+            let stepCount = 0;
+            let interval = setInterval(() => {
+                if (stepCount < steps) {
+                    lat1 += latStep;
+                    lng1 += lngStep;
+                    busMarker.setLatLng([lat1, lng1]);  // Move marker
+                    map.setView([lat1, lng1], 13);      // Optionally center map on the marker
+                    stepCount++;
+                } else {
+                    clearInterval(interval);  // Stop the animation after all steps
+                }
+            }, stepDuration);
+        }
+
+        // Function to fetch new bus location from the server and move the bus smoothly
+        function updateBusLocation() {
+            fetch('/get_bus_location')
+                .then(response => response.json())
+                .then(data => {
+                    var lat = data.latitude;
+                    var lng = data.longitude;
+                    var currentLatLng = busMarker.getLatLng();
+                    moveBus(currentLatLng.lat, currentLatLng.lng, lat, lng, 3000);  // 3-second animation
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        // Fetch new bus location every 5 seconds
+        setInterval(updateBusLocation, 5000);
+    </script>
+
+</body>
+</html>
